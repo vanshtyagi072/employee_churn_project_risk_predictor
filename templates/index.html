@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employee Churn & Project Risk Predictor</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+      background: white;
+      margin-top: 30px;
+      box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      color: #333;
+    }
+    label {
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin: 8px 0;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .results {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #eef;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🧠 Employee Churn Prediction</h2>
+    <form id="churn-form">
+      <label for="employee_index">Employee Index (0-99):</label>
+      <input type="number" id="employee_index" min="0" max="99" value="0" />
+      <button type="submit">Predict Churn</button>
+    </form>
+    <div class="results" id="churn-result"></div>
+
+    <hr />
+
+    <h2>🚧 Project Risk Prediction</h2>
+    <form id="project-form">
+      <label>Team Size:</label>
+      <input type="number" id="team_size" value="10" min="1" max="100" />
+
+      <label>Budget (USD):</label>
+      <input type="number" id="budget" value="50000" />
+
+      <label>Timeline (months):</label>
+      <input type="number" id="timeline" value="12" />
+
+      <label>Complexity Score:</label>
+      <input type="number" id="complexity" value="5" step="0.1" />
+
+      <label>Stakeholders:</label>
+      <input type="number" id="stakeholders" value="5" />
+
+      <label>Experience Level:</label>
+      <select id="experience">
+        <option>Junior</option>
+        <option>Mixed</option>
+        <option>Senior</option>
+      </select>
+
+      <button type="submit">Predict Risk</button>
+    </form>
+    <div class="results" id="project-result"></div>
+  </div>
+
+  <script>
+    document.getElementById("churn-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const index = document.getElementById("employee_index").value;
+
+      const response = await fetch("http://localhost:8000/predict-churn/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ index: parseInt(index) })
+      });
+
+      const data = await response.json();
+      document.getElementById("churn-result").innerHTML = `
+        <strong>Churn Probability:</strong> ${data.probability}%<br />
+        <strong>Risk Level:</strong> ${data.risk_level}<br />
+        <strong>Prediction:</strong> ${data.prediction}<br />
+        <strong>Recommendations:</strong><ul>${data.recommendations.map(r => `<li>${r}</li>`).join('')}</ul>
+      `;
+    });
+
+    document.getElementById("project-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const body = {
+        team_size: parseInt(document.getElementById("team_size").value),
+        budget: parseFloat(document.getElementById("budget").value),
+        timeline: parseInt(document.getElementById("timeline").value),
+        complexity: parseFloat(document.getElementById("complexity").value),
+        stakeholders: parseInt(document.getElementById("stakeholders").value),
+        experience: document.getElementById("experience").value
+      };
+
+      const response = await fetch("http://localhost:8000/predict-risk/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      const data = await response.json();
+      document.getElementById("project-result").innerHTML = `
+        <strong>Predicted Risk Level:</strong> ${data.label}<br />
+        <strong>Class Probabilities:</strong> Low: ${data.probs.Low}, Medium: ${data.probs.Medium}, High: ${data.probs.High}<br />
+        <strong>Recommendations:</strong><ul>${data.recommendations.map(r => `<li>${r}</li>`).join('')}</ul>
+      `;
+    });
+  </script>
+</body>
+</html>
